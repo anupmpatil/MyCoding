@@ -1,0 +1,4 @@
+Total Documents in collection = 3204
+Unique terms in collection = 12928
+Total terms in collection = 155736
+Average doc length = 48
