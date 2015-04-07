@@ -1,0 +1,38 @@
+The program rawhttpget implements raw socket IPPROTO_TCP in order to send a http request by building its tcp and Ip headers.
+
+The IPv4 layer generates an IP header when sending a packet unless the IP_HDRINCL socket option is enabled on the socket. 
+When it is enabled, the packet must contain an IP header. For receiving the IP header is always included in the packet.
+Currently we are using IPPROTO_TCP packet. But while sending we are setting IP_HDRINCL flag, so as to send the IP header that we have built.
+We are using this logic because a protocol of IPPROTO_RAW implies enabled IP_HDRINCL and is able to send any IP protocol that is specified in the passed header. 
+Receiving of all IP protocols via IPPROTO_RAW is not possible using raw sockets.
+
+We have given a timeout of 1 minute to recvfrom function, do that if server does not respond within a minute, we will assume that the connection has been timed out
+and we will exit connection.
+
+We will uese getifaddrs() function to get IP address. We are only considering the IP address of "eth0" interface.
+We will be choosing the random port number. The random number will be within range 0 to 65536. 
+Then using SOCK_STREAM, we will try to bind this socket with port number to chek if port is valid.
+If bind fails we will try to find port number again. (for finite times.)
+
+When we receive packet, we parse IP packet data as well.
+Since we are using raw socket and generating our own TCP header, OS has no idea that some program is trying to start three way handshake. 
+Hence after first request sent from client and first response received from server, OS sends RST packet. THis will reset connection. 
+Hence to avoid this we need to use following comand, 
+iptables -A OUTPUT -p tcp --tcp-flags RST RST -j DROP
+to stop the kernel from sending RST TCP packets by default. 
+
+The program must be run with SUPER USER PRIVILEGES
+
+We start with initiating a 3 way hand-shake. 
+The initial tcp request sent has syn flag set, a random sequence number(S1).
+The server replies with a packet having SYN/ACK flags set, a random sequence no.(N1) and acknoledgement no. (S1+1). 
+The client receives this packet and completes the hand shake by sending a packet with seq.no. (S1+1) and ack no.(N1).
+We are sending the http get request along with the 3rd request of the handshake. the server responds with the corresponding html page which is saved to the current directory.
+We fetch contents of every packet sent by server. We acknowledge every packet sent by server.
+While finishing, we use FIN flag. We send sequence no. (n). Server sends ACK with (n+1) as acknowledgement number. When we ack the FIN request by server. The program ends.
+
+
+Program will terminate if server does not send expected ack number during 3 way handshake.
+Program will terminate if it could not find valid source-dest IP address or source port number. Server port number is hard coded to 80.
+
+
