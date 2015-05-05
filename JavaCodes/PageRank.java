@@ -2,10 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package pagerank;
+
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,7 +15,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.TreeMap;
 
 /**
  *
@@ -34,41 +34,14 @@ class pageInfo
     }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class ValueComparator implements Comparator<String> {
-
-    Map<String, Double> base;
-    public ValueComparator(Map<String, Double> base) {
-        this.base = base;
-    }    
-    // Note: this comparator imposes orderings that are inconsistent with equals.    
-    public int compare(String a, String b) {
-        if (base.get(a) >= base.get(b)) {
-            return -1;
-        } else {
-            return 1;
-        } // returning 0 would merge keys
-    }
+public class PageRank {
+    
+     public static double RoundToNDecimals(double val) {
+            DecimalFormat df2 = new DecimalFormat("###.######");
+        return Double.valueOf(df2.format(val));
 }
 
-
-
-public class PageRank {
-
+    
     /**
      * @param args the command line arguments
      */
@@ -88,7 +61,7 @@ public class PageRank {
     //read file
     try {
          
-        inputReader = new Scanner(new File("C:\\Users\\Anup_Dell\\Desktop\\IR\\Project1\\PageRank\\src\\pagerank\\wt2g_inlinks.txt"));
+        inputReader = new Scanner(new File("wt2g_inlinks.txt"));
     } catch (FileNotFoundException e) {
         e.printStackTrace();  
         System.out.println("file not found");
@@ -101,9 +74,11 @@ public class PageRank {
     HashMap newPageRank = new HashMap();
     // store page name to number of outlinks
     HashMap outlinkSet = new HashMap();
-    // store page name to perplexity
-    HashMap perplexitySet = new HashMap();
+    // store page name to number of inlinks
+    HashMap inlinkCount = new HashMap();
+    
     //read line by line
+    try{
     while (inputReader.hasNextLine()) {
             Scanner line = new Scanner(inputReader.nextLine());
             pageInfo page = new pageInfo();
@@ -135,7 +110,7 @@ public class PageRank {
                 //System.out.println("currentlink" + currentLink);
                 if (outlinkSet.containsKey(currentLink))
                 {                    
-                    int outLinkCount = (int) outlinkSet.get(currentLink);
+                    int outLinkCount = (Integer) outlinkSet.get(currentLink);
                     outLinkCount += 1;
                     outlinkSet.remove(currentLink);
                     outlinkSet.put(currentLink, outLinkCount);
@@ -147,10 +122,15 @@ public class PageRank {
             }
         pages.add(page);
         pageMap.put(page.pagename, page.inlinks);
+        inlinkCount.put(page.pagename, page.inlinks.size());
        }
-    
-    System.out.println("Number of all pages : "+ allPageSet.size());
-    System.out.println("Number of inlink pages : "+ inlinkSet.size());
+    }
+    catch(Exception e)
+    {
+        e.printStackTrace();
+    }
+    //System.out.println("Number of all pages : "+ allPageSet.size());
+    //System.out.println("Number of inlink pages : "+ inlinkSet.size());
     
     
      for (String e : allPageSet) {
@@ -186,13 +166,13 @@ public class PageRank {
             System.out.println("    "+ p.inlinks.get(k).toString()+";");
         }*/
     }
-    System.out.println("power = "+power);
-    double entropy = Math.pow(2, power);
-    System.out.println("entropy = "+entropy);
-    perplexityList.add(entropy);
+    //System.out.println("power = "+power);
+    double perplexity = Math.pow(2, power);
+    System.out.println("Initial perplexity = "+perplexity);
+    perplexityList.add(perplexity);
     allPagesSize = allPageSet.size();
     
-    System.out.println("Sink pages are: size =  "+ sinkPages.size());
+    //System.out.println("Sink pages are: size =  "+ sinkPages.size());
     /*for (int i = 0; i < sinkPages.size(); i++)
     {
         System.out.println(sinkPages.get(i).toString());
@@ -200,8 +180,8 @@ public class PageRank {
     
     
     
-    System.out.println("Outlink count L(q): ");
-    System.out.println(outlinkSet);
+    //System.out.println("Outlink count L(q): ");
+    //System.out.println(outlinkSet);
     /*for (int i = 0; i < sinkPages.size(); i++)
     {
         System.out.println(outlinkSet.values());
@@ -210,16 +190,16 @@ public class PageRank {
     //damping factor
     double d = 0.85;
     int count = 0;
-    double threshold = 0.000000000000000001;
+    
     double difference = 0.0;
-    double newDifference = 0.0;
     int whileCount = 0;
+    int prevLoopCount = 0;
     // iteratively calculate page rank until it converges
     while(true)
     {
         double sinkPR = 0.0;
         for (int i = 0; i < sinkPages.size(); i++) {
-            double pr = (double) pageRank.get(sinkPages.get(i).toString());
+            double pr = (Double) pageRank.get(sinkPages.get(i).toString());
             //System.out.println("pr = " + pr);
             sinkPR = sinkPR + pr;
         }
@@ -233,8 +213,8 @@ public class PageRank {
             for (int i = 0; i < pageInlinksP.size(); i++)
             {
                 String q = pageInlinksP.get(i).toString();
-                int L_q = (int)outlinkSet.get(q);
-                double pr_q = (double)pageRank.get(q);
+                int L_q = (Integer)outlinkSet.get(q);
+                double pr_q = (Double)pageRank.get(q);
                 newPRp = newPRp + (double)(d*pr_q/L_q);
             }
             //System.out.println("newPRp = " + newPRp );
@@ -244,19 +224,47 @@ public class PageRank {
             power = power + px;
         }
         
-        entropy = Math.pow(2, power);
-        System.out.println("power = " + power);
-        perplexityList.add(entropy);
+        perplexity = Math.pow(2, power);
+        //System.out.println("power = " + power);
+        //System.out.println("perplexity = " + RoundToNDecimals(perplexity));
+        int index = perplexityList.size() - 1;
+        if (index >= 0)
+        {
+            double lastPerplexity = (Double)perplexityList.get(index);
+            //if (RoundToNDecimals(lastPerplexity) == RoundToNDecimals(perplexity))
+            if (Math.round(lastPerplexity) == Math.round(perplexity))
+            {
+                if ((whileCount - prevLoopCount == 1) || count == 0)
+                {
+                    count ++;
+                    prevLoopCount = whileCount;
+                }
+                else
+                {
+                    count = 0;
+                }
+                
+                if (count == 4)
+                {
+                    break;
+                }
+                
+                
+            }
+        }
+        
+        perplexityList.add(perplexity);
+        System.out.println("Perplexity after round " + whileCount + "    =    "+perplexity);
         
         for (String e : allPageSet) 
         {
-            double oldPR = (double) pageRank.get(e);
-            double newPR = (double) newPageRank.get(e);            
+            double oldPR = (Double) pageRank.get(e);
+            double newPR = (Double) newPageRank.get(e);            
             double diff = Math.abs(oldPR - newPR);
             difference = difference + diff;
         }
         
-        System.out.println("difference " + whileCount+ "        "+difference);
+        //System.out.println("difference " + whileCount+ "        "+difference);
        
         /*System.out.println("Old PR: ");
         System.out.println(pageRank);
@@ -270,72 +278,67 @@ public class PageRank {
         //newPageRank.putAll(pageMap);
         for (String e : allPageSet) 
         {
-            double newPR = (double) newPageRank.get(e);            
+            double newPR = (Double) newPageRank.get(e);            
             pageRank.remove(e);
             pageRank.put(e, newPR);
         }
-        if ( newDifference == difference)
-        {
-            count++;
-        }
-        else
-        {
-            newDifference = difference;
-        }
-                
-        if(count == 4)
-        {
-            break;
-        }
-        
         whileCount++;
-        
-        if(whileCount == 10)
-        {
-           // break;
-        }
     }
     
    
-    System.out.println("Final calculated PR: ");
+    //System.out.println("Final calculated PR: ");
     //System.out.println(pageRank);
     
-    /*ValueComparator bvc =  new ValueComparator(pageRank);
-    //Map<String, Double> sortedPageRank = new HashMap<String, Double>(bvc);
-    TreeMap<String,Double> sorted_map = new TreeMap<>(bvc);
     
-    System.out.println("Reached here");
-    
-    int cnt = 0;*/
-    
-    ArrayList<Map.Entry<String, Double>> l = new ArrayList(pageRank.entrySet());
-       Collections.sort(l, new Comparator<Map.Entry<?, Double>>(){
+    // sort page ranks
+    ArrayList<Map.Entry<String, Double>> sortedList = new ArrayList(pageRank.entrySet());
+       Collections.sort(sortedList, new Comparator<Map.Entry<?, Double>>(){
 
          public int compare(Map.Entry<?, Double> o1, Map.Entry<?, Double> o2) {
             return o2.getValue().compareTo(o1.getValue());
         }});
 
        //int cnt = 0;
-       for(int i = 0; i < l.size(); i++)
+       System.out.println("\n Sorted pagerank output after convergence: ");
+       for(int i = 0; i < sortedList.size(); i++)
        {
-          /* if (l.size() < 50)
-           {
-            System.out.println(l.get(i));
-           }*/
-          // else
-           {
-               
                if(i >=50)
                {
                    break;
                }
-               String key = l.get(i).getKey();
+               String key = sortedList.get(i).getKey();
                List inlinkList = (List)pageMap.get(key);
-               int olC = (int)outlinkSet.get(key);
-               System.out.println(l.get(i) + "\t inlinkcount = "+ inlinkList.size()+"\t outlinkcount = "+olC);               
-           }
+               int olC = (Integer)outlinkSet.get(key);
+               System.out.println("Index = " + i + "\t Pagerank = " + sortedList.get(i).getKey() + " = " +RoundToNDecimals(sortedList.get(i).getValue()) + "\t inlinkcount = " + inlinkList.size() + "\t outlinkcount = " + olC);
+               //System.out.println(l.get(i) + "\t inlinkcount = "+ inlinkList.size()+"\t outlinkcount = "+olC);               
        }  
-    System.out.println("Reached here perplexity = "+ perplexityList);
     
+       System.out.println("Final perplexity list = "+ perplexityList);    
+       
+       
+       // sort page ranks
+    ArrayList<Map.Entry<String, Integer>> sortedListByInlinks = new ArrayList(inlinkCount.entrySet());
+       Collections.sort(sortedListByInlinks, new Comparator<Map.Entry<?, Integer>>(){
+
+         public int compare(Map.Entry<?, Integer> o1, Map.Entry<?, Integer> o2) {
+            return o2.getValue().compareTo(o1.getValue());
+        }});
+
+       //int cnt = 0;
+       System.out.println("\n\n TOP 50  PAGES BY INLINKCOUNT: ");
+       for(int i = 0; i < sortedListByInlinks.size(); i++)
+       {
+               if(i >=50)
+               {
+                   break;
+               }
+               String key = sortedListByInlinks.get(i).getKey();
+               double prval = (Double)pageRank.get(key);
+               int olC = (Integer)outlinkSet.get(key);
+               System.out.println("Index = " + i + "\t Page = " + sortedListByInlinks.get(i).getKey() + "\t Inlinkcount = " +sortedListByInlinks.get(i).getValue() + "\t pagerank = "+ prval);
+               //System.out.println(l.get(i) + "\t inlinkcount = "+ inlinkList.size()+"\t outlinkcount = "+olC);               
+       }  
     }
 }
+
+
